@@ -3,14 +3,17 @@ dotenv.config({path: __dirname+"/.env"})
 
 const express = require("express")
 const cors = require("cors")
+const multer = require("multer")
+const pdfParse = require("pdf-parse")
 
 const { analyzeResume } = require("./resumeAnalyzer")
-
-// load environment variables from .env file
 
 
 const app = express()
 const PORT = process.env.PORT || 5001
+
+// store uploaded file in memory (not on disk)
+const upload = multer({ storage: multer.memoryStorage() })
 
 // ── Middleware ──────────────────────────────────────────
 // allows your React app (localhost:5173) to talk to this server
@@ -40,7 +43,7 @@ app.post("/analyze", async (req, res) => {
   }
 
   try {
-    // send to Claude and wait for result
+    // send to gemini and wait for result
     const result = await analyzeResume(resumeText, jobDescription)
 
     // send result back to React app
@@ -52,6 +55,38 @@ app.post("/analyze", async (req, res) => {
   }
 })
 
+app.post("/upload-pdf", upload.single("resume"), async (req, res) => {
+
+  // check if file was uploaded
+  if (!req.file) {
+    return res.status(400).json({ error: "No PDF file uploaded" })
+  }
+
+  // check if it's actually a PDF
+  if (req.file.mimetype !== "application/pdf") {
+    return res.status(400).json({ error: "Only PDF files are allowed" })
+  }
+
+  try {
+    // extract text from the PDF buffer
+    const pdfData = await pdfParse(req.file.buffer)
+    const resumeText = pdfData.text
+
+    if (!resumeText || resumeText.trim() === "") {
+      return res.status(400).json({ error: "Could not extract text from PDF" })
+    }
+
+    const jobDescription = req.body.jobDescription || ""
+
+    // send extracted text to Gemini
+    const result = await analyzeResume(resumeText, jobDescription)
+    res.json(result)
+
+  } catch (error) {
+    console.error("Error processing PDF:", error)
+    res.status(500).json({ error: "Failed to process PDF. Please try again." })
+  }
+})
 
 // ── Start Server ────────────────────────────────────────
 app.listen(PORT, () => {
