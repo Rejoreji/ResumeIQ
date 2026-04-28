@@ -10,15 +10,9 @@ const analyzeResume = async (resumeText, jobDescription) => {
 
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
-const today = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  })
-
   // the prompt we send to Gemini
 const prompt = `You are an expert resume reviewer and career coach with years of 
-experience in HR and recruitment. Today's date is ${today}. Use this as reference for evaluating dates on the resume. 
+experience in HR and recruitment. Use this as reference for evaluating dates on the resume. 
 Your job is to analyze resumes and provide 
 detailed, actionable feedback.
 
