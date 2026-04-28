@@ -3,6 +3,7 @@ import UploadPage from '../components/UploadPage'
 import ResultPage from '../components/ResultPage'
 import LoadingScreen from '../components/LoadingScreen'
 
+
 const App = () => {
   const [step, setStep] = useState("upload")   // controls which screen to show
   const [results, setResults] = useState(null) // stores the AI analysis result
