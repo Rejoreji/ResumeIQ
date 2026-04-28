@@ -4,7 +4,10 @@ dotenv.config({path: __dirname+"/.env"})
 const express = require("express")
 const cors = require("cors")
 const multer = require("multer")
-const pdfParse = require("pdf-parse")
+// ✅ Use direct path instead
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.mjs")
+//pdfjs-dist/legacy/build/pdf.js
+console.log("pdf-parse type:", typeof pdfjsLib)
 
 const { analyzeResume } = require("./resumeAnalyzer")
 
@@ -14,6 +17,23 @@ const PORT = process.env.PORT || 5001
 
 // store uploaded file in memory (not on disk)
 const upload = multer({ storage: multer.memoryStorage() })
+
+// ── Helper — extract text from PDF buffer ──────────────
+const extractTextFromPDF = async (buffer) => {
+  const uint8Array = new Uint8Array(buffer)
+  const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise
+
+  let fullText = ""
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const pageText = content.items.map((item) => item.str).join(" ")
+    fullText += pageText + "\n"
+  }
+
+  return fullText
+}
 
 // ── Middleware ──────────────────────────────────────────
 // allows your React app (localhost:5173) to talk to this server
@@ -56,29 +76,24 @@ app.post("/analyze", async (req, res) => {
 })
 
 app.post("/upload-pdf", upload.single("resume"), async (req, res) => {
-
-  // check if file was uploaded
   if (!req.file) {
     return res.status(400).json({ error: "No PDF file uploaded" })
   }
 
-  // check if it's actually a PDF
   if (req.file.mimetype !== "application/pdf") {
     return res.status(400).json({ error: "Only PDF files are allowed" })
   }
 
   try {
-    // extract text from the PDF buffer
-    const pdfData = await pdfParse(req.file.buffer)
-    const resumeText = pdfData.text
+    const resumeText = await extractTextFromPDF(req.file.buffer)
+
+    console.log("Extracted text preview:", resumeText.slice(0, 200))
 
     if (!resumeText || resumeText.trim() === "") {
       return res.status(400).json({ error: "Could not extract text from PDF" })
     }
 
     const jobDescription = req.body.jobDescription || ""
-
-    // send extracted text to Gemini
     const result = await analyzeResume(resumeText, jobDescription)
     res.json(result)
 
@@ -87,6 +102,7 @@ app.post("/upload-pdf", upload.single("resume"), async (req, res) => {
     res.status(500).json({ error: "Failed to process PDF. Please try again." })
   }
 })
+
 
 // ── Start Server ────────────────────────────────────────
 app.listen(PORT, () => {
