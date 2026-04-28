@@ -15,13 +15,13 @@ const handleAnalyze = async (resumeText, jobDescription, formData) => {
 
       if (formData) {
         // PDF upload — send as multipart form
-        response = await fetch("http://localhost:5001/upload-pdf", {
+        response = await fetch(`${import.meta.env.VITE_API_URL}/analyze`, {
           method: "POST",
           body: formData, // no Content-Type header needed for FormData
         })
       } else {
         // plain text — send as JSON
-        response = await fetch("http://localhost:5001/analyze", {
+        response = await fetch(`${import.meta.env.VITE_API_URL}/analyze`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ resumeText, jobDescription }),

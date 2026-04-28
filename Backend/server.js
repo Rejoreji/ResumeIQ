@@ -38,7 +38,10 @@ const extractTextFromPDF = async (buffer) => {
 // ── Middleware ──────────────────────────────────────────
 // allows your React app (localhost:5173) to talk to this server
 app.use(cors({
-  origin: "http://localhost:5173"
+  origin:[ "http://localhost:5173",
+    "https://resume-iq-rouge.vercel.app/"
+  ]
+
 }))
 
 // allows the server to understand JSON in request bodies
