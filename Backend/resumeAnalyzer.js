@@ -4,6 +4,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai")
 // initialize the Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
+
 const analyzeResume = async (resumeText, jobDescription) => {
 
   // pick the model
